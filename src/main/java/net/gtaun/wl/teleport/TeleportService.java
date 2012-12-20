@@ -13,6 +13,7 @@
 
 package net.gtaun.wl.teleport;
 
+import net.gtaun.shoebill.common.PlayerDesc;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.service.Service;
@@ -26,9 +27,9 @@ public interface TeleportService extends Service
 {
 	void setCommandEnabled(boolean enable);
 	void setCommandOperation(String op);
-	
-	Teleport createTeleport(String name, AngledLocation location);
+
+	Teleport createTeleport(String name, PlayerDesc createrDesc, AngledLocation location);
+	Teleport getTeleport(String name);
 	
 	boolean teleport(Player player, String name);
-	Teleport getTeleport(String name);
 }

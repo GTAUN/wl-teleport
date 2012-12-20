@@ -13,11 +13,16 @@
 
 package net.gtaun.wl.teleport.impl;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
 import net.gtaun.shoebill.Shoebill;
+import net.gtaun.shoebill.common.PlayerDesc;
 import net.gtaun.shoebill.data.AngledLocation;
+import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.event.PlayerEventHandler;
 import net.gtaun.shoebill.event.player.PlayerCommandEvent;
 import net.gtaun.shoebill.object.Player;
@@ -82,9 +87,9 @@ public class TeleportServiceImpl implements TeleportService
 		commandOperation = op;
 	}
 	
-	private Teleport generateTeleport(final String name, AngledLocation location)
+	private Teleport generateTeleport(final String name, PlayerDesc createrDesc, AngledLocation location)
 	{
-		return new Teleport("", location)
+		return new Teleport(createrDesc, location)
 		{
 			private boolean isDestroyed;
 			
@@ -126,14 +131,20 @@ public class TeleportServiceImpl implements TeleportService
 	}
 	
 	@Override
-	public Teleport createTeleport(String name, AngledLocation location)
+	public Teleport createTeleport(String name, PlayerDesc createrDesc, AngledLocation location)
 	{
-		Teleport teleport = generateTeleport(name, location);
+		Teleport teleport = generateTeleport(name, createrDesc, location);
 		
 		TeleportCreateEvent event = new TeleportCreateEvent(teleport);
 		eventManager.dispatchEvent(event, this);
 		
 		return teleport;
+	}
+
+	@Override
+	public Teleport getTeleport(String name)
+	{
+		return teleports.get(name);
 	}
 	
 	@Override
@@ -144,18 +155,63 @@ public class TeleportServiceImpl implements TeleportService
 		
 		return teleport.teleport(player);
 	}
-
-	@Override
-	public Teleport getTeleport(String name)
+	
+	private boolean processPlayerCommand(Player player, String op, Queue<String> args)
 	{
-		return teleports.get(name);
+		if (op.equals("make"))
+		{
+			if (args.size() != 1)
+			{
+				player.sendMessage(Color.YELLOW, "Usage: /tp make [name]");
+				return true;
+			}
+			String name = args.poll();
+			createTeleport(name, new PlayerDesc(player), player.getLocation());
+			player.sendMessage(Color.WHITE, "Make Teleport: " + name);
+			return true;
+		}
+		else
+		{
+			String name = op;
+			teleport(player, name);
+			return true;
+		}
 	}
 	
 	private PlayerEventHandler playerEventHandler = new PlayerEventHandler()
 	{
 		protected void onPlayerCommand(PlayerCommandEvent event)
 		{
+			if (isCommandEnabled == false) return;
 			
+			Player player = event.getPlayer();
+			
+			String command = event.getCommand();
+			String[] splits = command.split(" ", 2);
+			
+			String operation = splits[0].toLowerCase();
+			Queue<String> args = new LinkedList<>();
+			
+			if (splits.length > 1)
+			{
+				String[] argsArray = splits[1].split(" ");
+				args.addAll(Arrays.asList(argsArray));
+			}
+			
+			if (operation.equals(commandOperation))
+			{
+				if (args.size() < 1)
+				{
+					player.sendMessage(Color.YELLOW, "Usage: /tp [name]");
+					event.setProcessed();
+					return;
+				}
+				
+				String op = args.poll();
+				boolean ret = processPlayerCommand(player, op, args);
+				if (ret) event.setProcessed();
+				return;
+			}
 		}
 	};
 }

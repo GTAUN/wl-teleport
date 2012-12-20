@@ -13,6 +13,7 @@
 
 package net.gtaun.wl.teleport;
 
+import net.gtaun.shoebill.common.PlayerDesc;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Destroyable;
 import net.gtaun.shoebill.object.Player;
@@ -24,22 +25,22 @@ import net.gtaun.shoebill.object.Player;
  */
 public abstract class Teleport implements Destroyable
 {
-	private final String createrName;
+	private final PlayerDesc createrDesc;
 	private final AngledLocation location;
 	
 	
-	protected Teleport(String createrName, AngledLocation location)
+	protected Teleport(PlayerDesc createrDesc, AngledLocation location)
 	{
-		this.createrName = createrName;
+		this.createrDesc = createrDesc;
 		this.location = location;
 	}
 
 	public abstract String getName();
 	public abstract boolean teleport(Player player);
 	
-	public String getCreaterName()
+	public PlayerDesc getCreaterDesc()
 	{
-		return createrName;
+		return createrDesc;
 	}
 	
 	public AngledLocation getLocation()
