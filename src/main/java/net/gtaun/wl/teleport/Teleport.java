@@ -13,7 +13,7 @@
 
 package net.gtaun.wl.teleport;
 
-import net.gtaun.shoebill.common.PlayerDesc;
+import net.gtaun.shoebill.common.player.PlayerDesc;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Destroyable;
 import net.gtaun.shoebill.object.Player;
