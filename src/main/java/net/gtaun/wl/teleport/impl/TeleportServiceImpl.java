@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 MK124
+ * Copyright (C) 2013 MK124
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -14,13 +14,11 @@
 package net.gtaun.wl.teleport.impl;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Queue;
 
 import net.gtaun.shoebill.Shoebill;
-import net.gtaun.shoebill.common.player.PlayerDesc;
+import net.gtaun.shoebill.common.AbstractShoebillContext;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.event.PlayerEventHandler;
@@ -28,51 +26,41 @@ import net.gtaun.shoebill.event.player.PlayerCommandEvent;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.util.event.EventManager.HandlerPriority;
-import net.gtaun.util.event.ManagedEventManager;
 import net.gtaun.wl.teleport.Teleport;
+import net.gtaun.wl.teleport.TeleportManager;
 import net.gtaun.wl.teleport.TeleportService;
-import net.gtaun.wl.teleport.event.PlayerTeleportEvent;
-import net.gtaun.wl.teleport.event.TeleportCreateEvent;
 
 /**
  * 新未来世界传送服务实现类。
  * 
  * @author MK124
  */
-@SuppressWarnings("unused")
-public class TeleportServiceImpl implements TeleportService
+public class TeleportServiceImpl extends AbstractShoebillContext implements TeleportService
 {
-	private final Shoebill shoebill;
-	private final EventManager rootEventManager;
-	
-	private final ManagedEventManager eventManager;
-	private final Map<String, Teleport> teleports;
+	private TeleportManager teleportManager;
 	
 	private boolean isCommandEnabled = true;
 	private String commandOperation = "/tp";
+	private String teleportCommandOperation = "//";
 	
 	
 	public TeleportServiceImpl(Shoebill shoebill, EventManager rootEventManager)
 	{
-		this.shoebill = shoebill;
-		this.rootEventManager = rootEventManager;
-		
-		eventManager = new ManagedEventManager(rootEventManager);
-		teleports = new HashMap<>();
-		
-		initialize();
+		super(shoebill, rootEventManager);
+		teleportManager = new TeleportManager(shoebill, eventManager);
+		init();
 	}
-	
-	private void initialize()
+
+	@Override
+	protected void onInit()
 	{
 		eventManager.registerHandler(PlayerCommandEvent.class, playerEventHandler, HandlerPriority.NORMAL);
 	}
 
-	public void uninitialize()
+	@Override
+	protected void onDestroy()
 	{
-		eventManager.cancelAll();
-		
-		teleports.clear();
+
 	}
 
 	@Override
@@ -84,76 +72,31 @@ public class TeleportServiceImpl implements TeleportService
 	@Override
 	public void setCommandOperation(String op)
 	{
-		commandOperation = op;
-	}
-	
-	private Teleport generateTeleport(final String name, PlayerDesc createrDesc, AngledLocation location)
-	{
-		return new Teleport(createrDesc, location)
-		{
-			private boolean isDestroyed;
-			
-			{
-				teleports.put(name, this);
-			}
-			
-			@Override
-			public String getName()
-			{
-				return name;
-			}
-			
-			@Override
-			public boolean teleport(Player player)
-			{
-				PlayerTeleportEvent event = new PlayerTeleportEvent(this, player);
-				eventManager.dispatchEvent(event, player, this);
-				
-				if (event.isCanceled()) return false;
-				
-				player.setLocation(getLocation());
-				return true;
-			}
-			
-			@Override
-			public boolean isDestroyed()
-			{
-				return isDestroyed;
-			}
-			
-			@Override
-			public void destroy()
-			{
-				if (isDestroyed()) return;
-				teleports.remove(name);
-			}
-		};
+		teleportCommandOperation = op;
 	}
 	
 	@Override
-	public Teleport createTeleport(String name, PlayerDesc createrDesc, AngledLocation location)
+	public boolean hasTeleport(String name)
 	{
-		Teleport teleport = generateTeleport(name, createrDesc, location);
-		
-		TeleportCreateEvent event = new TeleportCreateEvent(teleport);
-		eventManager.dispatchEvent(event, this);
-		
-		return teleport;
+		return teleportManager.hasTeleport(name);
 	}
 
 	@Override
 	public Teleport getTeleport(String name)
 	{
-		return teleports.get(name);
+		return teleportManager.getTeleport(name);
 	}
 	
 	@Override
 	public boolean teleport(Player player, String name)
 	{
-		Teleport teleport = getTeleport(name);
-		if (teleport == null) return false;
-		
-		return teleport.teleport(player);
+		return teleportManager.teleport(player, name);
+	}
+	
+	@Override
+	public Teleport createTeleport(String name, Player creater, AngledLocation location)
+	{
+		return teleportManager.createTeleport(name, creater, location);
 	}
 	
 	private boolean processPlayerCommand(Player player, String op, Queue<String> args)
@@ -162,12 +105,12 @@ public class TeleportServiceImpl implements TeleportService
 		{
 			if (args.size() != 1)
 			{
-				player.sendMessage(Color.YELLOW, "Usage: /tp make [name]");
+				player.sendMessage(Color.YELLOW, "创建新地点指令: /tp make [地点名称]");
 				return true;
 			}
 			String name = args.poll();
-			createTeleport(name, new PlayerDesc(player), player.getLocation());
-			player.sendMessage(Color.WHITE, "Make Teleport: " + name);
+			createTeleport(name, player, player.getLocation());
+			player.sendMessage(Color.WHITE, "传送点 %1$s 已创建。", name);
 			return true;
 		}
 		else
@@ -185,8 +128,28 @@ public class TeleportServiceImpl implements TeleportService
 			if (isCommandEnabled == false) return;
 			
 			Player player = event.getPlayer();
-			
 			String command = event.getCommand();
+			
+			if (command.startsWith(teleportCommandOperation))
+			{
+				if (command.length() <= 2)
+				{
+					player.sendMessage(Color.YELLOW, "传送指令用法: //[地点名称]");
+					event.setProcessed();
+					return;
+				}
+				
+				String name = command.substring(2);
+				if (!hasTeleport(name))	
+				{
+					player.sendMessage(Color.YELLOW, "没有叫做 %1$s 的传送点。", name);
+					event.setProcessed();
+					return;
+				}
+				
+				teleport(player, name);
+			}
+			
 			String[] splits = command.split(" ", 2);
 			
 			String operation = splits[0].toLowerCase();
@@ -202,7 +165,7 @@ public class TeleportServiceImpl implements TeleportService
 			{
 				if (args.size() < 1)
 				{
-					player.sendMessage(Color.YELLOW, "Usage: /tp [name]");
+					player.sendMessage(Color.YELLOW, "传送指令用法: /tp [地点名称]");
 					event.setProcessed();
 					return;
 				}

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 MK124
+ * Copyright (C) 2013 MK124
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -13,7 +13,6 @@
 
 package net.gtaun.wl.teleport;
 
-import net.gtaun.shoebill.common.player.PlayerDesc;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.service.Service;
@@ -28,8 +27,9 @@ public interface TeleportService extends Service
 	void setCommandEnabled(boolean enable);
 	void setCommandOperation(String op);
 
-	Teleport createTeleport(String name, PlayerDesc createrDesc, AngledLocation location);
+	boolean hasTeleport(String name);
 	Teleport getTeleport(String name);
-	
 	boolean teleport(Player player, String name);
+	
+	Teleport createTeleport(String name, Player creater, AngledLocation location);
 }

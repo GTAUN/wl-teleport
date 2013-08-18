@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 MK124
+ * Copyright (C) 2013 MK124
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -51,7 +51,7 @@ public class TeleportPlugin extends ConfigurablePlugin
 	protected void onDisable() throws Throwable
 	{
 		unregisterService(TeleportService.class);
-		chatChannelService.uninitialize();
+		chatChannelService.destroy();
 		chatChannelService = null;
 		
 		LOGGER.info(getDescription().getName() + " " + getDescription().getVersion() + " Disabled.");
