@@ -17,6 +17,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import com.google.code.morphia.Datastore;
+
 import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
 import net.gtaun.shoebill.data.AngledLocation;
@@ -44,10 +46,10 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	private String teleportCommandOperation = "//";
 	
 	
-	public TeleportServiceImpl(Shoebill shoebill, EventManager rootEventManager)
+	public TeleportServiceImpl(Shoebill shoebill, EventManager rootEventManager, Datastore datastore)
 	{
 		super(shoebill, rootEventManager);
-		teleportManager = new TeleportManager(shoebill, eventManager);
+		this.teleportManager = new TeleportManager(shoebill, eventManager, datastore);
 		init();
 	}
 

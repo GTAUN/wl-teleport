@@ -13,6 +13,9 @@
 
 package net.gtaun.wl.teleport;
 
+import com.google.code.morphia.annotations.Entity;
+import com.google.code.morphia.annotations.Transient;
+
 import net.gtaun.shoebill.common.player.PlayerUtils;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Player;
@@ -23,9 +26,10 @@ import net.gtaun.wl.teleport.event.PlayerTeleportEvent;
  * 
  * @author MK124
  */
+@Entity("Teleport")
 public class Teleport
 {
-	private TeleportManager manager;
+	@Transient private TeleportManager manager;
 	
 	private String name;
 	private String creater;

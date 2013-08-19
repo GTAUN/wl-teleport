@@ -14,37 +14,60 @@
 package net.gtaun.wl.teleport;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import com.google.code.morphia.Datastore;
 
 import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
+import net.gtaun.shoebill.common.Saveable;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.teleport.event.TeleportCreateEvent;
 
-public class TeleportManager extends AbstractShoebillContext
+public class TeleportManager extends AbstractShoebillContext implements Saveable
 {
 	private final Map<String, Teleport> teleports;
 	
+	private Datastore datastore;
 	
-	public TeleportManager(Shoebill shoebill, EventManager rootEventManager)
+	
+	public TeleportManager(Shoebill shoebill, EventManager rootEventManager, Datastore datastore)
 	{
 		super(shoebill, rootEventManager);
-		teleports = new HashMap<>();
+		this.datastore = datastore;
+		this.teleports = new HashMap<>();
 		init();
 	}
 	
 	@Override
 	protected void onInit()
 	{
-		
+		load();
 	}
 	
 	@Override
 	protected void onDestroy()
 	{
-		
+		save();
+	}
+
+	@Override
+	public void save()
+	{
+		datastore.save(teleports.values());
+	}
+	
+	public void load()
+	{
+		List<Teleport> teleportList = datastore.createQuery(Teleport.class).asList();
+		for (Teleport teleport : teleportList)
+		{
+			teleport.setManager(this);
+			teleports.put(teleport.getName(), teleport);
+		}
 	}
 	
 	EventManager getEventManager()
