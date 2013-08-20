@@ -13,6 +13,7 @@
 
 package net.gtaun.wl.teleport;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,8 @@ import com.google.code.morphia.Datastore;
 
 import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
+import net.gtaun.shoebill.common.Filter;
+import net.gtaun.shoebill.common.FilterUtils;
 import net.gtaun.shoebill.common.Saveable;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Player;
@@ -91,6 +94,22 @@ public class TeleportManager extends AbstractShoebillContext implements Saveable
 		if (teleport == null) return false;
 		
 		return teleport.teleport(player);
+	}
+	
+	public List<Teleport> getTeleports()
+	{
+		return new ArrayList<>(teleports.values());
+	}
+	
+	public List<Teleport> getTeleports(final String creater)
+	{
+		return FilterUtils.filter(teleports.values(), new Filter<Teleport>()
+		{
+			public boolean isAcceptable(Teleport t)
+			{
+				return t.getCreater().equalsIgnoreCase(creater);
+			}
+		});
 	}
 
 	public Teleport createTeleport(String name, Player creater, AngledLocation location)

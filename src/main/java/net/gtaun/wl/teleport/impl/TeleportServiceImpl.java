@@ -15,6 +15,7 @@ package net.gtaun.wl.teleport.impl;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import com.google.code.morphia.Datastore;
@@ -26,10 +27,12 @@ import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.event.PlayerEventHandler;
 import net.gtaun.shoebill.event.player.PlayerCommandEvent;
 import net.gtaun.shoebill.object.Player;
+import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.util.event.EventManager.HandlerPriority;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.TeleportManager;
+import net.gtaun.wl.teleport.TeleportPlugin;
 import net.gtaun.wl.teleport.TeleportService;
 
 /**
@@ -39,6 +42,8 @@ import net.gtaun.wl.teleport.TeleportService;
  */
 public class TeleportServiceImpl extends AbstractShoebillContext implements TeleportService
 {
+	private final TeleportPlugin plugin;
+	
 	private TeleportManager teleportManager;
 	
 	private boolean isCommandEnabled = true;
@@ -46,9 +51,10 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	private String teleportCommandOperation = "//";
 	
 	
-	public TeleportServiceImpl(Shoebill shoebill, EventManager rootEventManager, Datastore datastore)
+	public TeleportServiceImpl(Shoebill shoebill, EventManager rootEventManager, TeleportPlugin plugin, Datastore datastore)
 	{
 		super(shoebill, rootEventManager);
+		this.plugin = plugin;
 		this.teleportManager = new TeleportManager(shoebill, eventManager, datastore);
 		init();
 	}
@@ -63,6 +69,12 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	protected void onDestroy()
 	{
 
+	}
+	
+	@Override
+	public Plugin getPlugin()
+	{
+		return plugin;
 	}
 
 	@Override
@@ -93,6 +105,18 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	public boolean teleport(Player player, String name)
 	{
 		return teleportManager.teleport(player, name);
+	}
+	
+	@Override
+	public List<Teleport> getTeleports()
+	{
+		return teleportManager.getTeleports();
+	}
+	
+	@Override
+	public List<Teleport> getTeleports(String creater)
+	{
+		return teleportManager.getTeleports(creater);
 	}
 	
 	@Override

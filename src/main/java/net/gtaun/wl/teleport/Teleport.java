@@ -13,6 +13,8 @@
 
 package net.gtaun.wl.teleport;
 
+import java.util.Date;
+
 import com.google.code.morphia.annotations.Entity;
 import com.google.code.morphia.annotations.Transient;
 
@@ -35,6 +37,9 @@ public class Teleport
 	private String creater;
 	private AngledLocation location;
 	
+	private Date updateDate;
+	private int teleportCounter;
+	
 
 	Teleport()
 	{
@@ -47,6 +52,9 @@ public class Teleport
 		this.name = name;
 		this.creater = creater;
 		this.location = location;
+		
+		updateDate = new Date();
+		teleportCounter = 0;
 	}
 	
 	void setManager(TeleportManager manager)
@@ -74,6 +82,16 @@ public class Teleport
 		return location.clone();
 	}
 	
+	public Date getUpdateDate()
+	{
+		return updateDate;
+	}
+	
+	public int getTeleportCounter()
+	{
+		return teleportCounter;
+	}
+	
 	public boolean teleport(Player player)
 	{
 		PlayerTeleportEvent event = new PlayerTeleportEvent(this, player);
@@ -82,6 +100,7 @@ public class Teleport
 		if (event.isCanceled()) return false;
 		
 		player.setLocation(getLocation());
+		teleportCounter++;
 		return true;
 	}
 }

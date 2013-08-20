@@ -77,7 +77,7 @@ public class TeleportPlugin extends ConfigurablePlugin
 			datastore = morphia.createDatastore(mongoClient, config.getDbName(), config.getDbUser(), config.getDbPass().toCharArray());
 		}
 		
-		chatChannelService = new TeleportServiceImpl(getShoebill(), getEventManager(), datastore);
+		chatChannelService = new TeleportServiceImpl(getShoebill(), getEventManager(), this, datastore);
 		registerService(TeleportService.class, chatChannelService);
 		
 		LOGGER.info(getDescription().getName() + " " + getDescription().getVersion() + " Enabled.");

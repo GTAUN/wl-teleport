@@ -13,8 +13,11 @@
 
 package net.gtaun.wl.teleport;
 
+import java.util.List;
+
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.object.Player;
+import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.shoebill.service.Service;
 
 /**
@@ -24,12 +27,17 @@ import net.gtaun.shoebill.service.Service;
  */
 public interface TeleportService extends Service
 {
+	Plugin getPlugin();
+	
 	void setCommandEnabled(boolean enable);
 	void setCommandOperation(String op);
 
 	boolean hasTeleport(String name);
 	Teleport getTeleport(String name);
 	boolean teleport(Player player, String name);
+	
+	List<Teleport> getTeleports();
+	List<Teleport> getTeleports(String creater);
 	
 	Teleport createTeleport(String name, Player creater, AngledLocation location);
 }
