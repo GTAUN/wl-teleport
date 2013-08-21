@@ -18,6 +18,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 public class TeleportListDialog extends AbstractPageListDialog
 {
+	private final TeleportServiceImpl teleportService;
 	private final List<Teleport> teleports;
 	
 	private int operation;
@@ -29,6 +30,7 @@ public class TeleportListDialog extends AbstractPageListDialog
 	(final Player player, Shoebill shoebill, EventManager eventManager, AbstractDialog parentDialog, TeleportServiceImpl teleportService, List<Teleport> teleports)
 	{
 		super(player, shoebill, eventManager, parentDialog);
+		this.teleportService = teleportService;
 		this.teleports = teleports;
 		
 		sortComparators = new ArrayList<Comparator<Teleport>>();
@@ -110,17 +112,39 @@ public class TeleportListDialog extends AbstractPageListDialog
 			}
 		});
 		
-		for (Teleport teleport : teleports)
+		for (final Teleport teleport : teleports)
 		{
-			String item = String.format("%1$s	{808080}创建者: %2$s, 人气: %3$d, 更新日期: %4$s",
-				teleport.getName(), teleport.getCreater(), teleport.getTeleportCounter(), DateFormatUtils.ISO_DATE_FORMAT);
+			String name = teleport.getName();
+			String creater = teleport.getCreater();
+			int counter = teleport.getTeleportCounter();
+			String date = DateFormatUtils.ISO_DATE_FORMAT.format(teleport.getUpdateDate());
+			
+			String item = String.format
+			(
+				"%1$s	{808080}创建者: %2$s, 人气: %3$d, 更新日期: %4$s",
+				name, creater, counter, date
+			);
 			
 			dialogListItems.add(new DialogListItem(item)
 			{	
 				@Override
 				public void onItemSelect()
 				{
-					
+					player.playSound(1083, player.getLocation());
+					switch (operation)
+					{
+					case 0:
+						teleport.teleport(player);
+						break;
+						
+					case 1:
+						new TeleportDialog(player, shoebill, eventManager, TeleportListDialog.this, teleportService, teleport).show();
+						break;
+						
+					default:
+						show();
+						break;
+					}
 				}
 			});
 		}

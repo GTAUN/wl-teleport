@@ -2,12 +2,14 @@ package net.gtaun.wl.teleport.dialog;
 
 import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.dialog.AbstractDialog;
+import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.shoebill.resource.ResourceDescription;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.common.dialog.AbstractListDialog;
 import net.gtaun.wl.common.dialog.MsgboxDialog;
+import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
 
 public class TeleportMainDialog extends AbstractListDialog
@@ -59,9 +61,19 @@ public class TeleportMainDialog extends AbstractListDialog
 					@Override
 					protected void onNaming(String name)
 					{
-						new TeleportCreateDialog(player, shoebill, eventManager, TeleportMainDialog.this, teleportService).show();
+						Teleport teleport;
+						try
+						{
+							teleport = teleportService.createTeleport(name, player, player.getLocation());
+							new TeleportDialog(player, shoebill, eventManager, TeleportMainDialog.this, teleportService, teleport).show();
+						}
+						catch (AlreadyExistException e)
+						{
+							append = "{FF0000}* 无法以此名称创建新传送点，请重试。";
+							show();
+						}
 					}
-				};
+				}.show();
 			}
 		});
 		
@@ -85,7 +97,7 @@ public class TeleportMainDialog extends AbstractListDialog
 			}
 		});
 		
-		dialogListItems.add(new DialogListItem("关于赛车系统")
+		dialogListItems.add(new DialogListItem("关于传送和世界系统")
 		{
 			@Override
 			public void onItemSelect()
@@ -95,9 +107,9 @@ public class TeleportMainDialog extends AbstractListDialog
 				Plugin plugin = teleportService.getPlugin();
 				ResourceDescription desc = plugin.getDescription();
 				
-				String caption = String.format("%1$s: %2$s", "赛车", "关于赛车系统");
+				String caption = String.format("%1$s: %2$s", "传送和世界系统", "关于");
 				String format =
-					"--- 新未来世界 赛车系统组件 ---\n" +
+					"--- 新未来世界 传送和世界系统组件 ---\n" +
 					"版本: %1$s (Build %2$d)\n" +
 					"编译时间: %3$s\n\n" +
 					"开发: mk124\n" +

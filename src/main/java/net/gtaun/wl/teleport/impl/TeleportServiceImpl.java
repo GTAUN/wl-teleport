@@ -18,14 +18,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import com.google.code.morphia.Datastore;
-
 import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.event.PlayerEventHandler;
 import net.gtaun.shoebill.event.player.PlayerCommandEvent;
+import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.util.event.EventManager;
@@ -34,6 +33,10 @@ import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.TeleportManager;
 import net.gtaun.wl.teleport.TeleportPlugin;
 import net.gtaun.wl.teleport.TeleportService;
+import net.gtaun.wl.teleport.dialog.TeleportDialog;
+import net.gtaun.wl.teleport.dialog.TeleportMainDialog;
+
+import com.google.code.morphia.Datastore;
 
 /**
  * 新未来世界传送服务实现类。
@@ -120,9 +123,15 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	}
 	
 	@Override
-	public Teleport createTeleport(String name, Player creater, AngledLocation location)
+	public Teleport createTeleport(String name, Player creater, AngledLocation location) throws AlreadyExistException
 	{
 		return teleportManager.createTeleport(name, creater, location);
+	}
+	
+	@Override
+	public void deleteTeleport(Teleport teleport)
+	{
+		teleportManager.deleteTeleport(teleport);
 	}
 	
 	private boolean processPlayerCommand(Player player, String op, Queue<String> args)
@@ -135,14 +144,22 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 				return true;
 			}
 			String name = args.poll();
-			createTeleport(name, player, player.getLocation());
-			player.sendMessage(Color.WHITE, "传送点 %1$s 已创建。", name);
+			
+			try
+			{
+				Teleport teleport = createTeleport(name, player, player.getLocation());
+				player.sendMessage(Color.WHITE, "传送点 %1$s 已创建。", name);
+				new TeleportDialog(player, shoebill, eventManager, null, this, teleport).show();
+			}
+			catch (AlreadyExistException e)
+			{
+				player.sendMessage(Color.RED, "错误: 无法以名称 %1$s 创建新传送点，请重试。", name);
+			}
 			return true;
 		}
 		else
 		{
-			String name = op;
-			teleport(player, name);
+			new TeleportMainDialog(player, shoebill, eventManager, null, this).show();
 			return true;
 		}
 	}
@@ -174,6 +191,9 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 				}
 				
 				teleport(player, name);
+
+				player.sendMessage(Color.WHITE, "你已传送到 %1$s 。", name);
+				event.setProcessed();
 			}
 			
 			String[] splits = command.split(" ", 2);
@@ -189,13 +209,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 			
 			if (operation.equals(commandOperation))
 			{
-				if (args.size() < 1)
-				{
-					player.sendMessage(Color.YELLOW, "传送指令用法: /tp [地点名称]");
-					event.setProcessed();
-					return;
-				}
-				
+				if (args.size() < 1) args.offer("");
 				String op = args.poll();
 				boolean ret = processPlayerCommand(player, op, args);
 				if (ret) event.setProcessed();

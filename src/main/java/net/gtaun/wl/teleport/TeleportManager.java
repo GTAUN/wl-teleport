@@ -26,6 +26,7 @@ import net.gtaun.shoebill.common.Filter;
 import net.gtaun.shoebill.common.FilterUtils;
 import net.gtaun.shoebill.common.Saveable;
 import net.gtaun.shoebill.data.AngledLocation;
+import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.teleport.event.TeleportCreateEvent;
@@ -112,13 +113,32 @@ public class TeleportManager extends AbstractShoebillContext implements Saveable
 		});
 	}
 
-	public Teleport createTeleport(String name, Player creater, AngledLocation location)
+	public Teleport createTeleport(String name, Player creater, AngledLocation location) throws AlreadyExistException
 	{
+		if (teleports.containsKey(name)) throw new AlreadyExistException();
+		
 		Teleport teleport = new Teleport(this, name, creater.getName(), location);
+		teleports.put(teleport.getName(), teleport);
 		
 		TeleportCreateEvent event = new TeleportCreateEvent(teleport);
 		eventManager.dispatchEvent(event, this);
 		
 		return teleport;
+	}
+
+	public void renameTeleport(Teleport teleport, String newName) throws AlreadyExistException, IllegalArgumentException
+	{
+		if (getTeleport(teleport.getName()) != teleport) throw new IllegalArgumentException();
+		if (teleports.containsKey(newName)) throw new AlreadyExistException();
+		
+		teleports.remove(teleport.getName());
+		teleport.setName(newName);
+		teleports.put(teleport.getName(), teleport);
+	}
+
+	public void deleteTeleport(Teleport teleport)
+	{
+		if (getTeleport(teleport.getName()) != teleport) throw new IllegalArgumentException();
+		teleports.remove(teleport.getName());
 	}
 }

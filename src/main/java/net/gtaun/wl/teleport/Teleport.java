@@ -20,6 +20,7 @@ import com.google.code.morphia.annotations.Transient;
 
 import net.gtaun.shoebill.common.player.PlayerUtils;
 import net.gtaun.shoebill.data.AngledLocation;
+import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.wl.teleport.event.PlayerTeleportEvent;
 
@@ -51,9 +52,8 @@ public class Teleport
 		this.manager = manager;
 		this.name = name;
 		this.creater = creater;
-		this.location = location;
+		updateLocation(location);
 		
-		updateDate = new Date();
 		teleportCounter = 0;
 	}
 	
@@ -65,6 +65,11 @@ public class Teleport
 	public String getName()
 	{
 		return name;
+	}
+	
+	void setName(String name)
+	{
+		this.name = name;
 	}
 	
 	public String getCreater()
@@ -90,6 +95,22 @@ public class Teleport
 	public int getTeleportCounter()
 	{
 		return teleportCounter;
+	}
+
+	public void updateLocation(AngledLocation loc)
+	{
+		location = new AngledLocation(loc).immutable();
+		updateDate = new Date();
+	}
+
+	public void rename(String newName) throws IllegalArgumentException, AlreadyExistException
+	{
+		manager.renameTeleport(this, newName);
+	}
+	
+	public void delete()
+	{
+		manager.deleteTeleport(this);
 	}
 	
 	public boolean teleport(Player player)
