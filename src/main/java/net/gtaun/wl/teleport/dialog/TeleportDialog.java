@@ -163,8 +163,6 @@ public class TeleportDialog extends AbstractListDialog
 				String msg = String.format("当前角度值为: %1$1.1f\n请输入新角度值:", teleport.getLocation().getAngle());
 				new AbstractInputDialog(player, shoebill, eventManager, TeleportDialog.this, "编辑传送点角度", msg)
 				{
-					private String append;
-					
 					public void onClickOk(String inputText)
 					{
 						player.playSound(1083, player.getLocation());
@@ -181,12 +179,6 @@ public class TeleportDialog extends AbstractListDialog
 							append = "{FF0000}* 请按照正确的格式输入角度值。";
 							show();
 						}
-					}
-					
-					protected void show(String text)
-					{
-						if (append != null) super.show(this.message + "\n\n" + append);
-						else super.show(text);
 					}
 				}.show();
 			}
