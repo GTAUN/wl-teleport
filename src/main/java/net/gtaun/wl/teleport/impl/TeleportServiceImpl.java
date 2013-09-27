@@ -25,6 +25,8 @@ import java.util.Queue;
 
 import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
+import net.gtaun.shoebill.common.dialog.AbstractDialog;
+import net.gtaun.shoebill.common.dialog.AbstractListDialog.DialogListItem;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.event.PlayerEventHandler;
@@ -34,6 +36,8 @@ import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.util.event.EventManager.HandlerPriority;
+import net.gtaun.wl.gamemode.event.GamemodeDialogEventHandler;
+import net.gtaun.wl.gamemode.event.MainMenuDialogShowEvent;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.TeleportManager;
 import net.gtaun.wl.teleport.TeleportPlugin;
@@ -71,6 +75,8 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	protected void onInit()
 	{
 		eventManager.registerHandler(PlayerCommandEvent.class, playerEventHandler, HandlerPriority.NORMAL);
+		
+		eventManager.registerHandler(MainMenuDialogShowEvent.class, gamemodeDialogEventHandler, HandlerPriority.NORMAL);
 	}
 
 	@Override
@@ -83,6 +89,12 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	public Plugin getPlugin()
 	{
 		return plugin;
+	}
+	
+	@Override
+	public void showMainDialog(Player player, AbstractDialog parentDialog)
+	{
+		new TeleportMainDialog(player, shoebill, eventManager, parentDialog, this).show();
 	}
 
 	@Override
@@ -164,7 +176,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 		}
 		else
 		{
-			new TeleportMainDialog(player, shoebill, eventManager, null, this).show();
+			showMainDialog(player, null);
 			return true;
 		}
 	}
@@ -220,6 +232,24 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 				if (ret) event.setProcessed();
 				return;
 			}
+		}
+	};
+	
+	private GamemodeDialogEventHandler gamemodeDialogEventHandler = new GamemodeDialogEventHandler()
+	{
+		@Override
+		protected void onMainMenuDialogShow(final MainMenuDialogShowEvent event)
+		{
+			final Player player = event.getPlayer();
+			event.addItem(new DialogListItem("传送点系统")
+			{
+				@Override
+				public void onItemSelect()
+				{
+					player.playSound(1083, player.getLocation());
+					showMainDialog(player, getCurrentDialog());
+				}
+			});
 		}
 	};
 }

@@ -20,6 +20,7 @@ package net.gtaun.wl.teleport;
 
 import java.util.List;
 
+import net.gtaun.shoebill.common.dialog.AbstractDialog;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
@@ -34,6 +35,8 @@ import net.gtaun.shoebill.service.Service;
 public interface TeleportService extends Service
 {
 	Plugin getPlugin();
+	
+	void showMainDialog(Player player, AbstractDialog parentDialog);
 	
 	void setCommandEnabled(boolean enable);
 	void setCommandOperation(String op);
