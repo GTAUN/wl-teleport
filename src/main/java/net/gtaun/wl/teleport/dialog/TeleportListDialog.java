@@ -22,19 +22,19 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.dialog.AbstractDialog;
+import net.gtaun.shoebill.common.dialog.ListDialogItemRadio;
+import net.gtaun.shoebill.common.dialog.PageListDialog;
 import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.data.Location;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
-import net.gtaun.wl.common.dialog.AbstractPageListDialog;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
 
 import org.apache.commons.lang3.time.DateFormatUtils;
 
-public class TeleportListDialog extends AbstractPageListDialog
+public class TeleportListDialog extends PageListDialog
 {
 	private final TeleportServiceImpl teleportService;
 	private final List<Teleport> teleports;
@@ -45,38 +45,22 @@ public class TeleportListDialog extends AbstractPageListDialog
 	
 	
 	public TeleportListDialog
-	(final Player player, Shoebill shoebill, EventManager eventManager, AbstractDialog parentDialog, TeleportServiceImpl teleportService, List<Teleport> teleports)
+	(Player player, EventManager eventManager, AbstractDialog parentDialog, TeleportServiceImpl teleportService, List<Teleport> teleports)
 	{
-		super(player, shoebill, eventManager, parentDialog);
+		super(player, eventManager);
+		setParentDialog(parentDialog);
+		
 		this.teleportService = teleportService;
 		this.teleports = teleports;
 		
 		sortComparators = new ArrayList<Comparator<Teleport>>();
-		sortComparators.add(new Comparator<Teleport>()
+		sortComparators.add((o1, o2) ->
 		{
-			@Override
-			public int compare(Teleport o1, Teleport o2)
-			{
-				Location loc = player.getLocation();
-				return (int) (o1.getLocation().distance(loc) - o2.getLocation().distance(loc));
-			}
+			Location loc = player.getLocation();
+			return (int) (o1.getLocation().distance(loc) - o2.getLocation().distance(loc));
 		});
-		sortComparators.add(new Comparator<Teleport>()
-		{
-			@Override
-			public int compare(Teleport o1, Teleport o2)
-			{
-				return o2.getTeleportCounter() - o1.getTeleportCounter();
-			}
-		});
-		sortComparators.add(new Comparator<Teleport>()
-		{
-			@Override
-			public int compare(Teleport o1, Teleport o2)
-			{
-				return (int) (o2.getUpdateDate().getTime()/1000 - o1.getUpdateDate().getTime()/1000);
-			}
-		});
+		sortComparators.add((o1, o2) -> o2.getTeleportCounter() - o1.getTeleportCounter());
+		sortComparators.add((o1, o2) -> (int) (o2.getUpdateDate().getTime()/1000 - o1.getUpdateDate().getTime()/1000));
 		
 		sortComparator = sortComparators.get(0);
 		update();
@@ -84,53 +68,35 @@ public class TeleportListDialog extends AbstractPageListDialog
 	
 	private void update()
 	{
-		dialogListItems.clear();
-		dialogListItems.add(new DialogListItemRadio("操作: ")
-		{
-			{
-				addItem(new RadioItem("传送", Color.LIGHTBLUE));
-				addItem(new RadioItem("查看选项", Color.LIGHTPINK));
-			}
-			
-			@Override
-			public int getSelected()
-			{
-				return operation;
-			}
-			
-			@Override
-			public void onItemSelect(RadioItem item, int index)
+		items.clear();
+		addItem(ListDialogItemRadio.create()
+			.itemText("操作:")
+			.selectedIndex(() -> operation)
+			.item("传送", Color.LIGHTBLUE)
+			.item("查看选项", Color.LIGHTPINK)
+			.onRadioItemSelect((item, index) ->
 			{
 				player.playSound(1083, player.getLocation());
 				operation = index;
 				show();
-			}
-		});
+			})
+			.build());
 		
-		dialogListItems.add(new DialogListItemRadio("排序方式: ")
-		{
-			{
-				addItem(new RadioItem("距离最近", Color.RED));
-				addItem(new RadioItem("人气最高", Color.GREEN));
-				addItem(new RadioItem("最近更新", Color.YELLOW));
-			}
-			
-			@Override
-			public int getSelected()
-			{
-				return sortComparators.indexOf(sortComparator);
-			}
-			
-			@Override
-			public void onItemSelect(RadioItem item, int index)
+		addItem(ListDialogItemRadio.create()
+			.itemText("排序方式:")
+			.selectedIndex(() -> sortComparators.indexOf(sortComparator))
+			.item("距离最近", Color.RED)
+			.item("人气最高", Color.GREEN)
+			.item("最近更新", Color.YELLOW)
+			.onRadioItemSelect((item, index) ->
 			{
 				player.playSound(1083, player.getLocation());
 				sortComparator = sortComparators.get(index);
 				show();
-			}
-		});
+			})
+			.build());
 		
-		for (final Teleport teleport : teleports)
+		for (Teleport teleport : teleports)
 		{
 			String name = teleport.getName();
 			String creater = teleport.getCreater();
@@ -143,26 +109,22 @@ public class TeleportListDialog extends AbstractPageListDialog
 				name, creater, counter, date
 			);
 			
-			dialogListItems.add(new DialogListItem(item)
-			{	
-				@Override
-				public void onItemSelect()
+			addItem(item, (i) ->
+			{
+				player.playSound(1083, player.getLocation());
+				switch (operation)
 				{
-					player.playSound(1083, player.getLocation());
-					switch (operation)
-					{
-					case 0:
-						teleport.teleport(player);
-						break;
-						
-					case 1:
-						new TeleportDialog(player, shoebill, eventManager, TeleportListDialog.this, teleportService, teleport).show();
-						break;
-						
-					default:
-						show();
-						break;
-					}
+				case 0:
+					teleport.teleport(player);
+					break;
+					
+				case 1:
+					TeleportDialog.create(player, eventManagerNode.getParent(), TeleportListDialog.this, teleportService, teleport).show();
+					break;
+					
+				default:
+					show();
+					break;
 				}
 			});
 		}

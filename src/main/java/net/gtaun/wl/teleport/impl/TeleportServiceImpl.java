@@ -23,21 +23,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
 import net.gtaun.shoebill.common.dialog.AbstractDialog;
-import net.gtaun.shoebill.common.dialog.AbstractListDialog.DialogListItem;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.data.Color;
-import net.gtaun.shoebill.event.PlayerEventHandler;
 import net.gtaun.shoebill.event.player.PlayerCommandEvent;
 import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.util.event.EventManager;
-import net.gtaun.util.event.EventManager.HandlerPriority;
-import net.gtaun.wl.gamemode.event.GamemodeDialogEventHandler;
-import net.gtaun.wl.gamemode.event.MainMenuDialogShowEvent;
+import net.gtaun.wl.gamemode.event.MainMenuDialogExtendEvent;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.TeleportManager;
 import net.gtaun.wl.teleport.TeleportPlugin;
@@ -45,7 +40,7 @@ import net.gtaun.wl.teleport.TeleportService;
 import net.gtaun.wl.teleport.dialog.TeleportDialog;
 import net.gtaun.wl.teleport.dialog.TeleportMainDialog;
 
-import com.google.code.morphia.Datastore;
+import org.mongodb.morphia.Datastore;
 
 /**
  * 新未来世界传送服务实现类。
@@ -63,20 +58,77 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	private String teleportCommandOperation = "//";
 	
 	
-	public TeleportServiceImpl(Shoebill shoebill, EventManager rootEventManager, TeleportPlugin plugin, Datastore datastore)
+	public TeleportServiceImpl(EventManager rootEventManager, TeleportPlugin plugin, Datastore datastore)
 	{
-		super(shoebill, rootEventManager);
+		super(rootEventManager);
 		this.plugin = plugin;
-		this.teleportManager = new TeleportManager(shoebill, eventManager, datastore);
+		this.teleportManager = new TeleportManager(eventManager, datastore);
 		init();
 	}
 
 	@Override
 	protected void onInit()
 	{
-		eventManager.registerHandler(PlayerCommandEvent.class, playerEventHandler, HandlerPriority.NORMAL);
+		eventManager.registerHandler(PlayerCommandEvent.class, (e) ->
+		{
+			if (isCommandEnabled == false) return;
+			
+			Player player = e.getPlayer();
+			String command = e.getCommand();
+			
+			if (command.startsWith(teleportCommandOperation))
+			{
+				if (command.length() <= 2)
+				{
+					player.sendMessage(Color.YELLOW, "传送指令用法: //[地点名称]");
+					e.setProcessed();
+					return;
+				}
+				
+				String name = command.substring(2);
+				if (!hasTeleport(name))
+				{
+					player.sendMessage(Color.YELLOW, "没有叫做 %1$s 的传送点。", name);
+					e.setProcessed();
+					return;
+				}
+				
+				teleport(player, name);
+
+				player.sendMessage(Color.WHITE, "你已传送到 %1$s 。", name);
+				e.setProcessed();
+			}
+			
+			String[] splits = command.split(" ", 2);
+			
+			String operation = splits[0].toLowerCase();
+			Queue<String> args = new LinkedList<>();
+			
+			if (splits.length > 1)
+			{
+				String[] argsArray = splits[1].split(" ");
+				args.addAll(Arrays.asList(argsArray));
+			}
+			
+			if (operation.equals(commandOperation))
+			{
+				if (args.size() < 1) args.offer("");
+				String op = args.poll();
+				boolean ret = processPlayerCommand(player, op, args);
+				if (ret) e.setProcessed();
+				return;
+			}
+		});
 		
-		eventManager.registerHandler(MainMenuDialogShowEvent.class, gamemodeDialogEventHandler, HandlerPriority.NORMAL);
+		eventManager.registerHandler(MainMenuDialogExtendEvent.class, (e) ->
+		{
+			Player player = e.getPlayer();
+			e.getDialog().addItem("传送点系统", (i) ->
+			{
+				player.playSound(1083, player.getLocation());
+				showMainDialog(player, e.getDialog());
+			});
+		});
 	}
 
 	@Override
@@ -94,7 +146,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	@Override
 	public void showMainDialog(Player player, AbstractDialog parentDialog)
 	{
-		new TeleportMainDialog(player, shoebill, eventManager, parentDialog, this).show();
+		TeleportMainDialog.create(player, eventManager, parentDialog, this).show();
 	}
 
 	@Override
@@ -166,7 +218,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 			{
 				Teleport teleport = createTeleport(name, player, player.getLocation());
 				player.sendMessage(Color.WHITE, "传送点 %1$s 已创建。", name);
-				new TeleportDialog(player, shoebill, eventManager, null, this, teleport).show();
+				TeleportDialog.create(player, eventManager, null, this, teleport).show();
 			}
 			catch (AlreadyExistException e)
 			{
@@ -180,76 +232,4 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 			return true;
 		}
 	}
-	
-	private PlayerEventHandler playerEventHandler = new PlayerEventHandler()
-	{
-		protected void onPlayerCommand(PlayerCommandEvent event)
-		{
-			if (isCommandEnabled == false) return;
-			
-			Player player = event.getPlayer();
-			String command = event.getCommand();
-			
-			if (command.startsWith(teleportCommandOperation))
-			{
-				if (command.length() <= 2)
-				{
-					player.sendMessage(Color.YELLOW, "传送指令用法: //[地点名称]");
-					event.setProcessed();
-					return;
-				}
-				
-				String name = command.substring(2);
-				if (!hasTeleport(name))	
-				{
-					player.sendMessage(Color.YELLOW, "没有叫做 %1$s 的传送点。", name);
-					event.setProcessed();
-					return;
-				}
-				
-				teleport(player, name);
-
-				player.sendMessage(Color.WHITE, "你已传送到 %1$s 。", name);
-				event.setProcessed();
-			}
-			
-			String[] splits = command.split(" ", 2);
-			
-			String operation = splits[0].toLowerCase();
-			Queue<String> args = new LinkedList<>();
-			
-			if (splits.length > 1)
-			{
-				String[] argsArray = splits[1].split(" ");
-				args.addAll(Arrays.asList(argsArray));
-			}
-			
-			if (operation.equals(commandOperation))
-			{
-				if (args.size() < 1) args.offer("");
-				String op = args.poll();
-				boolean ret = processPlayerCommand(player, op, args);
-				if (ret) event.setProcessed();
-				return;
-			}
-		}
-	};
-	
-	private GamemodeDialogEventHandler gamemodeDialogEventHandler = new GamemodeDialogEventHandler()
-	{
-		@Override
-		protected void onMainMenuDialogShow(final MainMenuDialogShowEvent event)
-		{
-			final Player player = event.getPlayer();
-			event.addItem(new DialogListItem("传送点系统")
-			{
-				@Override
-				public void onItemSelect()
-				{
-					player.playSound(1083, player.getLocation());
-					showMainDialog(player, getCurrentDialog());
-				}
-			});
-		}
-	};
 }

@@ -42,7 +42,7 @@ public class TeleportPluginConfig
 		config.setDefault("mongodb.host", "localhost:27017");
 		config.setDefault("mongodb.dbName", "WlRace");
 		config.setDefault("mongodb.user", "");
-		config.setDefault("mongodb.pass", "");	
+		config.setDefault("mongodb.pass", "");
 		config.setDefault("command.menu.teleportMainMenu", "/tp");
 		
 		config.read(new FileInputStream(file));

@@ -20,14 +20,13 @@ package net.gtaun.wl.teleport;
 
 import java.util.Date;
 
-import com.google.code.morphia.annotations.Entity;
-import com.google.code.morphia.annotations.Transient;
-
-import net.gtaun.shoebill.common.player.PlayerUtils;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.wl.teleport.event.PlayerTeleportEvent;
+
+import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Transient;
 
 /**
  * 新未来世界传送点数据。
@@ -84,7 +83,7 @@ public class Teleport
 	
 	public Player getCreaterPlayer()
 	{
-		return PlayerUtils.getPlayer(creater);
+		return Player.get(creater);
 	}
 	
 	public AngledLocation getLocation()
@@ -104,7 +103,7 @@ public class Teleport
 
 	public void updateLocation(AngledLocation loc)
 	{
-		location = new AngledLocation(loc).immutable();
+		location = new AngledLocation(loc).clone();
 		updateDate = new Date();
 	}
 

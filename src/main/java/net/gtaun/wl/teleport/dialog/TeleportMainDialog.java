@@ -18,111 +18,57 @@
 
 package net.gtaun.wl.teleport.dialog;
 
-import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.dialog.AbstractDialog;
 import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.resource.Plugin;
 import net.gtaun.shoebill.resource.ResourceDescription;
 import net.gtaun.util.event.EventManager;
-import net.gtaun.wl.common.dialog.AbstractListDialog;
-import net.gtaun.wl.common.dialog.MsgboxDialog;
+import net.gtaun.wl.common.dialog.WlListDialog;
+import net.gtaun.wl.common.dialog.WlMsgboxDialog;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
 
-public class TeleportMainDialog extends AbstractListDialog
+public class TeleportMainDialog
 {
-	public TeleportMainDialog(final Player player, final Shoebill shoebill, final EventManager eventManager, AbstractDialog parentDialog, final TeleportServiceImpl teleportService)
+	public static WlListDialog create
+	(Player player, EventManager eventManager, AbstractDialog parent, TeleportServiceImpl service)
 	{
-		super(player, shoebill, eventManager, parentDialog);
-		this.caption = "传送和世界系统";
-		
-		dialogListItems.add(new DialogListItem("浏览传送点 ...")
-		{
-			@Override
-			public void onItemSelect()
+		return WlListDialog.create(player, eventManager)
+			.parentDialog(parent)
+			.caption("传送和世界系统")
+			.item("浏览传送点 ...", (i) -> new TeleportListDialog(player, eventManager, i.getCurrentDialog(), service, service.getTeleports()).show())
+			.item("我的传送点 ...", (i) -> new TeleportListDialog(player, eventManager, i.getCurrentDialog(), service, service.getTeleports(player.getName())).show())
+			.item("传送点收藏夹 ...", (i) -> i.getCurrentDialog().show())
+			.item("创建新传送点", (i) ->
 			{
-				player.playSound(1083, player.getLocation());
-				new TeleportListDialog(player, shoebill, eventManager, TeleportMainDialog.this, teleportService, teleportService.getTeleports()).show();
-			}
-		});
-		
-		dialogListItems.add(new DialogListItem("我的传送点 ...")
-		{
-			@Override
-			public void onItemSelect()
-			{
-				player.playSound(1083, player.getLocation());
-				new TeleportListDialog(player, shoebill, eventManager, TeleportMainDialog.this, teleportService, teleportService.getTeleports(player.getName())).show();
-			}
-		});
-		
-		dialogListItems.add(new DialogListItem("传送点收藏夹 ...")
-		{
-			@Override
-			public void onItemSelect()
-			{
-				
-			}
-		});
-		
-		dialogListItems.add(new DialogListItem("创建新传送点")
-		{
-			@Override
-			public void onItemSelect()
-			{
-				player.playSound(1083, player.getLocation());
-				
 				String message = "请输入新传送点的名称，要求长度为 2-24 个字之间:";
-				new TeleportNamingDialog(player, shoebill, eventManager, TeleportMainDialog.this, "创建新传送点", message, teleportService)
+				TeleportNamingDialog.create(player, eventManager, i.getCurrentDialog(), "创建新传送点", message, service, (d, name) ->
 				{
-					@Override
-					protected void onNaming(String name)
+					try
 					{
-						Teleport teleport;
-						try
-						{
-							teleport = teleportService.createTeleport(name, player, player.getLocation());
-							new TeleportDialog(player, shoebill, eventManager, TeleportMainDialog.this, teleportService, teleport).show();
-						}
-						catch (AlreadyExistException e)
-						{
-							append = "{FF0000}* 无法以此名称创建新传送点，请重试。";
-							show();
-						}
+						Teleport teleport = service.createTeleport(name, player, player.getLocation());
+						TeleportDialog.create(player, eventManager, i.getCurrentDialog(), service, teleport).show();
 					}
-				}.show();
-			}
-		});
-		
-		dialogListItems.add(new DialogListItem("个人偏好设置 ...")
-		{
-			@Override
-			public void onItemSelect()
+					catch (AlreadyExistException e)
+					{
+						d.setAppendMessage("{FF0000}* 无法以此名称创建新传送点，请重试。");
+						d.show();
+					}
+				}).show();
+			})
+			.item("个人偏好设置 ...", (i) -> i.getCurrentDialog().show())
+			.item("帮助信息", (i) ->
 			{
-				player.playSound(1083, player.getLocation());
-			}
-		});
-		
-		dialogListItems.add(new DialogListItem("帮助信息")
-		{
-			@Override
-			public void onItemSelect()
+				WlMsgboxDialog.create(player, eventManager)
+					.parentDialog(i.getCurrentDialog())
+					.caption(String.format("%1$s: %2$s", "传送和世界系统", "帮助信息"))
+					.message("偷懒中，暂无帮助信息……")
+					.build();
+			})
+			.item("关于传送和世界系统", (i) ->
 			{
-				player.playSound(1083, player.getLocation());
-				String caption = String.format("%1$s: %2$s", "传送和世界系统", "帮助信息");
-				new MsgboxDialog(player, shoebill, eventManager, TeleportMainDialog.this, caption, "偷懒中，暂无帮助信息……").show();
-			}
-		});
-		
-		dialogListItems.add(new DialogListItem("关于传送和世界系统")
-		{
-			@Override
-			public void onItemSelect()
-			{
-				player.playSound(1083, player.getLocation());
-				
-				Plugin plugin = teleportService.getPlugin();
+				Plugin plugin = service.getPlugin();
 				ResourceDescription desc = plugin.getDescription();
 				
 				String caption = String.format("%1$s: %2$s", "传送和世界系统", "关于");
@@ -141,8 +87,13 @@ public class TeleportMainDialog extends AbstractListDialog
 					"本组件禁止在任何商业或盈利性服务器上使用。\n";
 				String message = String.format(format, desc.getVersion(), desc.getBuildNumber(), desc.getBuildDate());
 				
-				new MsgboxDialog(player, shoebill, eventManager, TeleportMainDialog.this, caption, message).show();
-			}
-		});
+				WlMsgboxDialog.create(player, eventManager)
+					.parentDialog(i.getCurrentDialog())
+					.caption(caption)
+					.message(message)
+					.build();
+			})
+			.onClickOk((d, i) -> player.playSound(1083))
+			.build();
 	}
 }

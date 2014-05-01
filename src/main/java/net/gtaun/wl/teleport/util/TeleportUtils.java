@@ -16,52 +16,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.gtaun.wl.teleport.event;
+package net.gtaun.wl.teleport.util;
 
-import net.gtaun.shoebill.object.Player;
-import net.gtaun.util.event.Interruptable;
-import net.gtaun.wl.teleport.Teleport;
+import org.apache.commons.lang3.StringUtils;
 
-/**
- * 玩家被传送事件，可取消。
- * 
- * @author MK124
- */
-public class PlayerTeleportEvent extends TeleportEvent implements Interruptable
+public class TeleportUtils
 {
-	protected final Player player;
+	public static final int NAME_MIN_LENGTH = 2;
+	public static final int NAME_MAX_LENGTH = 24;
 	
-	private boolean isCanceled;
 	
-	
-	public PlayerTeleportEvent(Teleport teleport, Player player)
+	public static boolean isVaildName(String name)
 	{
-		super(teleport);
-		this.player = player;
+		if (name.length() < NAME_MIN_LENGTH || name.length() > NAME_MAX_LENGTH) return false;
+		if (name.contains("%") || name.contains("\t") || name.contains("\n")) return false;
+		if (!StringUtils.trimToEmpty(name).equals(name)) return false;
+		return true;
 	}
 	
-	public Player getPlayer()
+	public static String filterName(String name)
 	{
-		return player;
+		name = StringUtils.trimToEmpty(name);
+		name = StringUtils.replace(name, "%", "#");
+		name = StringUtils.replace(name, "\t", " ");
+		name = StringUtils.replace(name, "\n", " ");
+		return name;
 	}
 	
-	@Override
-	public void interrupt()
+	private TeleportUtils()
 	{
-		super.interrupt();
-	}
-	
-	/**
-	 * 取消传送。
-	 */
-	public void cancel()
-	{
-		isCanceled = true;
-		interrupt();
-	}
-	
-	public boolean isCanceled()
-	{
-		return isCanceled;
+		
 	}
 }

@@ -22,19 +22,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import com.google.code.morphia.Datastore;
-
-import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.AbstractShoebillContext;
-import net.gtaun.shoebill.common.Filter;
-import net.gtaun.shoebill.common.FilterUtils;
 import net.gtaun.shoebill.common.Saveable;
 import net.gtaun.shoebill.data.AngledLocation;
 import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.teleport.event.TeleportCreateEvent;
+
+import org.mongodb.morphia.Datastore;
 
 public class TeleportManager extends AbstractShoebillContext implements Saveable
 {
@@ -43,9 +41,9 @@ public class TeleportManager extends AbstractShoebillContext implements Saveable
 	private Datastore datastore;
 	
 	
-	public TeleportManager(Shoebill shoebill, EventManager rootEventManager, Datastore datastore)
+	public TeleportManager(EventManager rootEventManager, Datastore datastore)
 	{
-		super(shoebill, rootEventManager);
+		super(rootEventManager);
 		this.datastore = datastore;
 		this.teleports = new HashMap<>();
 		init();
@@ -109,13 +107,7 @@ public class TeleportManager extends AbstractShoebillContext implements Saveable
 	
 	public List<Teleport> getTeleports(final String creater)
 	{
-		return FilterUtils.filter(teleports.values(), new Filter<Teleport>()
-		{
-			public boolean isAcceptable(Teleport t)
-			{
-				return t.getCreater().equalsIgnoreCase(creater);
-			}
-		});
+		return teleports.values().stream().filter((t) -> t.getCreater().equalsIgnoreCase(creater)).collect(Collectors.toList());
 	}
 
 	public Teleport createTeleport(String name, Player creater, AngledLocation location) throws AlreadyExistException

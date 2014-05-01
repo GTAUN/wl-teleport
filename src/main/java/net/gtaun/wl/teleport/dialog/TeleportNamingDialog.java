@@ -18,44 +18,46 @@
 
 package net.gtaun.wl.teleport.dialog;
 
-import net.gtaun.shoebill.Shoebill;
 import net.gtaun.shoebill.common.dialog.AbstractDialog;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
-import net.gtaun.wl.common.dialog.AbstractInputDialog;
+import net.gtaun.wl.common.dialog.WlInputDialog;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
-import net.gtaun.wl.teleport.util.TeleoportUtils;
+import net.gtaun.wl.teleport.util.TeleportUtils;
 
-public abstract class TeleportNamingDialog extends AbstractInputDialog
+public abstract class TeleportNamingDialog
 {
-	private final TeleportServiceImpl teleportService;
-	
-	
-	public TeleportNamingDialog(Player player, Shoebill shoebill, EventManager rootEventManager, AbstractDialog parentDialog, String caption, String message, TeleportServiceImpl teleportService)
+	public interface NamingHandler
 	{
-		super(player, shoebill, rootEventManager, parentDialog, caption, message);
-		this.teleportService = teleportService;
+		void onNaming(WlInputDialog dialog, String name);
 	}
 	
-	@Override
-	public void onClickOk(String inputText)
-	{
-		player.playSound(1083, player.getLocation());
-		if (!TeleoportUtils.isVaildName(inputText))
-		{
-			append = String.format("{FF0000}* 您输入的名称 {FFFFFF}%1$s{FF0000} 不合法，请重新输入。", inputText);
-			show();
-			return;
-		}
-		if (teleportService.hasTeleport(inputText))
-		{
-			append = String.format("{FF0000}* 您输入的名称 {FFFFFF}%1$s{FF0000} 已被使用，请重新输入。", inputText);
-			show();
-			return;
-		}
-		
-		onNaming(inputText);
-	}
 	
-	protected abstract void onNaming(String name);
+	public static WlInputDialog create
+	(Player player, EventManager eventManager, AbstractDialog parent, String caption, String message, TeleportServiceImpl service, NamingHandler namingHandler)
+	{
+		return WlInputDialog.create(player, eventManager)
+			.parentDialog(parent)
+			.caption(caption)
+			.message(message)
+			.onClickOk((d, t) ->
+			{
+				player.playSound(1083);
+				if (!TeleportUtils.isVaildName(t))
+				{
+					((WlInputDialog) d).setAppendMessage(String.format("{FF0000}* 您输入的名称 {FFFFFF}%1$s{FF0000} 不合法，请重新输入。", t));
+					d.show();
+					return;
+				}
+				if (service.hasTeleport(t))
+				{
+					((WlInputDialog) d).setAppendMessage(String.format("{FF0000}* 您输入的名称 {FFFFFF}%1$s{FF0000} 已被使用，请重新输入。", t));
+					d.show();
+					return;
+				}
+
+				namingHandler.onNaming((WlInputDialog) d, t);
+			})
+			.build();
+	}
 }
