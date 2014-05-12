@@ -92,7 +92,7 @@ public class TeleportDialog
 					.message(msg)
 					.onClickOk((d, text) ->
 					{
-						player.playSound(1083, player.getLocation());
+						player.playSound(1083);
 						
 						try (Scanner scanner = new Scanner(text))
 						{
@@ -129,7 +129,7 @@ public class TeleportDialog
 					.message(msg)
 					.onClickOk((d, text) ->
 					{
-						player.playSound(1083, player.getLocation());
+						player.playSound(1083);
 						
 						try (Scanner scanner = new Scanner(text))
 						{
@@ -176,7 +176,7 @@ public class TeleportDialog
 					.message(message)
 					.onClickOk((d)->
 					{
-						player.playSound(1083, player.getLocation());
+						player.playSound(1083);
 						teleport.delete();
 						d.showParentDialog();
 					}).build().show();
@@ -184,7 +184,7 @@ public class TeleportDialog
 			
 			.item("传送", (i) ->
 			{
-				player.playSound(1083, player.getLocation());
+				player.playSound(1083);
 				teleport.teleport(player);
 				player.sendMessage(Color.WHITE, "你已传送到 %1$s 。", teleport.getName());
 			})

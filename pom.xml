@@ -22,7 +22,7 @@
 	<packaging>jar</packaging>
 	
 	<name>wl-teleport</name>
-	<description>WL Chat Channel Plugin</description>
+	<description>WL Teleport and World Switching System</description>
 	<url>https://github.com/GTAUN/wl-teleport</url>
 	
 	<properties>

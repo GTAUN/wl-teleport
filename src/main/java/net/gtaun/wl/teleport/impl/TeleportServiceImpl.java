@@ -125,7 +125,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 			Player player = e.getPlayer();
 			e.getDialog().addItem("传送点系统", (i) ->
 			{
-				player.playSound(1083, player.getLocation());
+				player.playSound(1083);
 				showMainDialog(player, e.getDialog());
 			});
 		});

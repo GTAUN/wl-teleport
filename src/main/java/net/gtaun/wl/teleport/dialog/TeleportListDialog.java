@@ -76,7 +76,7 @@ public class TeleportListDialog extends PageListDialog
 			.item("查看选项", Color.LIGHTPINK)
 			.onRadioItemSelect((item, index) ->
 			{
-				player.playSound(1083, player.getLocation());
+				player.playSound(1083);
 				operation = index;
 				show();
 			})
@@ -90,7 +90,7 @@ public class TeleportListDialog extends PageListDialog
 			.item("最近更新", Color.YELLOW)
 			.onRadioItemSelect((item, index) ->
 			{
-				player.playSound(1083, player.getLocation());
+				player.playSound(1083);
 				sortComparator = sortComparators.get(index);
 				show();
 			})
@@ -111,7 +111,7 @@ public class TeleportListDialog extends PageListDialog
 			
 			addItem(item, (i) ->
 			{
-				player.playSound(1083, player.getLocation());
+				player.playSound(1083);
 				switch (operation)
 				{
 				case 0:
