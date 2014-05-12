@@ -62,14 +62,14 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	{
 		super(rootEventManager);
 		this.plugin = plugin;
-		this.teleportManager = new TeleportManager(eventManager, datastore);
+		this.teleportManager = new TeleportManager(eventManagerNode, datastore);
 		init();
 	}
 
 	@Override
 	protected void onInit()
 	{
-		eventManager.registerHandler(PlayerCommandEvent.class, (e) ->
+		eventManagerNode.registerHandler(PlayerCommandEvent.class, (e) ->
 		{
 			if (isCommandEnabled == false) return;
 			
@@ -120,7 +120,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 			}
 		});
 		
-		eventManager.registerHandler(MainMenuDialogExtendEvent.class, (e) ->
+		eventManagerNode.registerHandler(MainMenuDialogExtendEvent.class, (e) ->
 		{
 			Player player = e.getPlayer();
 			e.getDialog().addItem("传送点系统", (i) ->
@@ -146,7 +146,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	@Override
 	public void showMainDialog(Player player, AbstractDialog parentDialog)
 	{
-		TeleportMainDialog.create(player, eventManager, parentDialog, this).show();
+		TeleportMainDialog.create(player, eventManagerNode, parentDialog, this).show();
 	}
 
 	@Override
@@ -218,7 +218,7 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 			{
 				Teleport teleport = createTeleport(name, player, player.getLocation());
 				player.sendMessage(Color.WHITE, "传送点 %1$s 已创建。", name);
-				TeleportDialog.create(player, eventManager, null, this, teleport).show();
+				TeleportDialog.create(player, eventManagerNode, null, this, teleport).show();
 			}
 			catch (AlreadyExistException e)
 			{

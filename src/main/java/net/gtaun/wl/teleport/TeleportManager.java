@@ -79,7 +79,7 @@ public class TeleportManager extends AbstractShoebillContext implements Saveable
 	
 	EventManager getEventManager()
 	{
-		return eventManager;
+		return eventManagerNode;
 	}
 	
 	public boolean hasTeleport(String name)
@@ -118,7 +118,7 @@ public class TeleportManager extends AbstractShoebillContext implements Saveable
 		teleports.put(teleport.getName(), teleport);
 		
 		TeleportCreateEvent event = new TeleportCreateEvent(teleport);
-		eventManager.dispatchEvent(event, this);
+		eventManagerNode.dispatchEvent(event, this);
 		
 		return teleport;
 	}
