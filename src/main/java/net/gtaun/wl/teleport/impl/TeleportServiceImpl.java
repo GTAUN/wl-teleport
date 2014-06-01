@@ -18,6 +18,7 @@
 
 package net.gtaun.wl.teleport.impl;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,8 +32,12 @@ import net.gtaun.shoebill.event.player.PlayerCommandEvent;
 import net.gtaun.shoebill.exception.AlreadyExistException;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.shoebill.resource.Plugin;
+import net.gtaun.shoebill.service.Service;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.gamemode.event.MainMenuDialogExtendEvent;
+import net.gtaun.wl.lang.LanguageService;
+import net.gtaun.wl.lang.LocalizedStringSet;
+import net.gtaun.wl.lang.LocalizedStringSet.PlayerStringSet;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.TeleportManager;
 import net.gtaun.wl.teleport.TeleportPlugin;
@@ -44,26 +49,37 @@ import org.mongodb.morphia.Datastore;
 
 /**
  * 新未来世界传送服务实现类。
- * 
+ *
  * @author MK124
  */
 public class TeleportServiceImpl extends AbstractShoebillContext implements TeleportService
 {
 	private final TeleportPlugin plugin;
-	
+
 	private TeleportManager teleportManager;
-	
+
 	private boolean isCommandEnabled = true;
 	private String commandOperation = "/tp";
 	private String teleportCommandOperation = "//";
-	
-	
+
+	private final LocalizedStringSet localizedStringSet;
+
+
 	public TeleportServiceImpl(EventManager rootEventManager, TeleportPlugin plugin, Datastore datastore)
 	{
 		super(rootEventManager);
 		this.plugin = plugin;
 		this.teleportManager = new TeleportManager(eventManagerNode, datastore);
+
+		LanguageService languageService = Service.get(LanguageService.class);
+		localizedStringSet = languageService.createStringSet(new File(plugin.getDataDir(), "text"));
+
 		init();
+	}
+
+	public LocalizedStringSet getLocalizedStringSet()
+	{
+		return localizedStringSet;
 	}
 
 	@Override
@@ -72,44 +88,46 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 		eventManagerNode.registerHandler(PlayerCommandEvent.class, (e) ->
 		{
 			if (isCommandEnabled == false) return;
-			
+
 			Player player = e.getPlayer();
 			String command = e.getCommand();
-			
+
+			PlayerStringSet stringSet = localizedStringSet.getStringSet(player);
+
 			if (command.startsWith(teleportCommandOperation))
 			{
 				if (command.length() <= 2)
 				{
-					player.sendMessage(Color.YELLOW, "传送指令用法: //[地点名称]");
+					stringSet.sendMessage(Color.YELLOW, "Command.Teleport.Usage");
 					e.setProcessed();
 					return;
 				}
-				
+
 				String name = command.substring(2);
 				if (!hasTeleport(name))
 				{
-					player.sendMessage(Color.YELLOW, "没有叫做 %1$s 的传送点。", name);
+					stringSet.sendMessage(Color.YELLOW, "Command.Teleport.NotFound", name);
 					e.setProcessed();
 					return;
 				}
-				
+
 				teleport(player, name);
 
-				player.sendMessage(Color.WHITE, "你已传送到 %1$s 。", name);
+				stringSet.sendMessage(Color.WHITE, "Command.Teleport.Message", name);
 				e.setProcessed();
 			}
-			
+
 			String[] splits = command.split(" ", 2);
-			
+
 			String operation = splits[0].toLowerCase();
 			Queue<String> args = new LinkedList<>();
-			
+
 			if (splits.length > 1)
 			{
 				String[] argsArray = splits[1].split(" ");
 				args.addAll(Arrays.asList(argsArray));
 			}
-			
+
 			if (operation.equals(commandOperation))
 			{
 				if (args.size() < 1) args.offer("");
@@ -119,11 +137,13 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 				return;
 			}
 		});
-		
+
 		eventManagerNode.registerHandler(MainMenuDialogExtendEvent.class, (e) ->
 		{
 			Player player = e.getPlayer();
-			e.getDialog().addItem("传送点系统", (i) ->
+			PlayerStringSet stringSet = localizedStringSet.getStringSet(player);
+
+			e.getDialog().addItem(stringSet.get("Name.Full"), (i) ->
 			{
 				player.playSound(1083);
 				showMainDialog(player, e.getDialog());
@@ -136,13 +156,13 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	{
 
 	}
-	
+
 	@Override
 	public Plugin getPlugin()
 	{
 		return plugin;
 	}
-	
+
 	@Override
 	public void showMainDialog(Player player, AbstractDialog parentDialog)
 	{
@@ -154,13 +174,13 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	{
 		isCommandEnabled = enable;
 	}
-	
+
 	@Override
 	public void setCommandOperation(String op)
 	{
 		teleportCommandOperation = op;
 	}
-	
+
 	@Override
 	public boolean hasTeleport(String name)
 	{
@@ -172,57 +192,59 @@ public class TeleportServiceImpl extends AbstractShoebillContext implements Tele
 	{
 		return teleportManager.getTeleport(name);
 	}
-	
+
 	@Override
 	public boolean teleport(Player player, String name)
 	{
 		return teleportManager.teleport(player, name);
 	}
-	
+
 	@Override
 	public List<Teleport> getTeleports()
 	{
 		return teleportManager.getTeleports();
 	}
-	
+
 	@Override
 	public List<Teleport> getTeleports(String creater)
 	{
 		return teleportManager.getTeleports(creater);
 	}
-	
+
 	@Override
 	public Teleport createTeleport(String name, Player creater, AngledLocation location) throws AlreadyExistException
 	{
 		return teleportManager.createTeleport(name, creater, location);
 	}
-	
+
 	@Override
 	public void deleteTeleport(Teleport teleport)
 	{
 		teleportManager.deleteTeleport(teleport);
 	}
-	
+
 	private boolean processPlayerCommand(Player player, String op, Queue<String> args)
 	{
 		if (op.equals("make"))
 		{
+			PlayerStringSet stringSet = localizedStringSet.getStringSet(player);
+
 			if (args.size() != 1)
 			{
-				player.sendMessage(Color.YELLOW, "创建新地点指令: /tp make [地点名称]");
+				stringSet.sendMessage(Color.YELLOW, "Command.Make.Usage");
 				return true;
 			}
 			String name = args.poll();
-			
+
 			try
 			{
 				Teleport teleport = createTeleport(name, player, player.getLocation());
-				player.sendMessage(Color.WHITE, "传送点 %1$s 已创建。", name);
+				stringSet.sendMessage(Color.WHITE, "Command.Make.Created", name);
 				TeleportDialog.create(player, eventManagerNode, null, this, teleport).show();
 			}
 			catch (AlreadyExistException e)
 			{
-				player.sendMessage(Color.RED, "错误: 无法以名称 %1$s 创建新传送点，请重试。", name);
+				stringSet.sendMessage(Color.WHITE, "Command.Make.AlreadyExist", name);
 			}
 			return true;
 		}

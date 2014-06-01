@@ -22,6 +22,7 @@ import net.gtaun.shoebill.common.dialog.AbstractDialog;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.common.dialog.WlInputDialog;
+import net.gtaun.wl.lang.LocalizedStringSet.PlayerStringSet;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
 import net.gtaun.wl.teleport.util.TeleportUtils;
 
@@ -31,11 +32,12 @@ public abstract class TeleportNamingDialog
 	{
 		void onNaming(WlInputDialog dialog, String name);
 	}
-	
-	
+
+
 	public static WlInputDialog create
 	(Player player, EventManager eventManager, AbstractDialog parent, String caption, String message, TeleportServiceImpl service, NamingHandler namingHandler)
 	{
+		PlayerStringSet stringSet = service.getLocalizedStringSet().getStringSet(player);
 		return WlInputDialog.create(player, eventManager)
 			.parentDialog(parent)
 			.caption(caption)
@@ -45,13 +47,13 @@ public abstract class TeleportNamingDialog
 				player.playSound(1083);
 				if (!TeleportUtils.isVaildName(t))
 				{
-					((WlInputDialog) d).setAppendMessage(String.format("{FF0000}* 您输入的名称 {FFFFFF}%1$s{FF0000} 不合法，请重新输入。", t));
+					((WlInputDialog) d).setAppendMessage(stringSet.format("Dialog.TeleportNamingDialog.InvaildName", t));
 					d.show();
 					return;
 				}
 				if (service.hasTeleport(t))
 				{
-					((WlInputDialog) d).setAppendMessage(String.format("{FF0000}* 您输入的名称 {FFFFFF}%1$s{FF0000} 已被使用，请重新输入。", t));
+					((WlInputDialog) d).setAppendMessage(stringSet.format("Dialog.TeleportNamingDialog.AlreadyExist", t));
 					d.show();
 					return;
 				}

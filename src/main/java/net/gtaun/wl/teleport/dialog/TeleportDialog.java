@@ -31,6 +31,7 @@ import net.gtaun.util.event.EventManager;
 import net.gtaun.wl.common.dialog.WlInputDialog;
 import net.gtaun.wl.common.dialog.WlListDialog;
 import net.gtaun.wl.common.dialog.WlMsgboxDialog;
+import net.gtaun.wl.lang.LocalizedStringSet.PlayerStringSet;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
 
@@ -41,21 +42,24 @@ public class TeleportDialog
 	public static WlListDialog create
 	(Player player, EventManager eventManager, AbstractDialog parent, TeleportServiceImpl service, Teleport teleport)
 	{
+		PlayerStringSet stringSet = service.getLocalizedStringSet().getStringSet(player);
 		return WlListDialog.create(player, eventManager)
 			.parentDialog(parent)
-			
-			.item(() -> String.format("名称: %1$s", teleport.getName()), (i) ->
+			.caption(() -> stringSet.format("Dialog.TeleportDialog.Caption", teleport.getName()))
+
+			.item(() -> stringSet.format("Dialog.TeleportDialog.Name", teleport.getName()), (i) ->
 			{
 				player.playSound(1083);
-				
+
 				if (!player.getName().equalsIgnoreCase(teleport.getCreater()))
 				{
 					i.getCurrentDialog().show();
 					return;
 				}
-				
-				String message = "请输入传送点的新名称，要求长度为 2-24 个字之间:";
-				TeleportNamingDialog.create(player, eventManager, i.getCurrentDialog(), "修改传送点名称", message, service, (d, name) ->
+
+				String caption = stringSet.get("Dialog.TeleportDialog.EditNameDialog.Caption");
+				String message = stringSet.get("Dialog.TeleportDialog.EditNameDialog.Message");
+				TeleportNamingDialog.create(player, eventManager, i.getCurrentDialog(), caption, message, service, (d, name) ->
 				{
 					try
 					{
@@ -64,18 +68,18 @@ public class TeleportDialog
 					}
 					catch (IllegalArgumentException | AlreadyExistException e)
 					{
-						d.setAppendMessage("{FF0000}* 由于数据错误而无法更改名称，请重试。");
+						d.setAppendMessage(stringSet.get("Dialog.TeleportDialog.EditNameDialog.InvaildName"));
 						d.show();
 					}
 				}).show();
 			})
-			
-			.item(() -> String.format("创建者: %1$s", teleport.getCreater()), (i) -> i.getCurrentDialog().show())
-			
+
+			.item(() -> stringSet.format("Dialog.TeleportDialog.Creater", teleport.getCreater()), (i) -> i.getCurrentDialog().show())
+
 			.item(() ->
 			{
 				AngledLocation loc = teleport.getLocation();
-				return String.format("坐标: x=%1$1.2f, y=%2$1.2f, z=%3$1.2f, interior=%4$d", loc.getX(), loc.getY(), loc.getZ(), loc.getInteriorId());
+				return stringSet.format("Position", loc.x, loc.y, loc.z, loc.interiorId);
 			}, (i) ->
 			{
 				if (!player.getName().equalsIgnoreCase(teleport.getCreater()))
@@ -85,15 +89,15 @@ public class TeleportDialog
 				}
 
 				AngledLocation oldLoc = teleport.getLocation();
-				String msg = String.format("当前坐标值为: x=%1$1.2f, y=%2$1.2f z=%3$1.2f interior=%4$d\n请输入新坐标值，格式: [x] [y] [z] [interior]", oldLoc.getX(), oldLoc.getY(), oldLoc.getZ(), oldLoc.getInteriorId());
-				
+				String msg = stringSet.format("Dialog.TeleportDialog.EditPositionDialog.Message", oldLoc.x, oldLoc.y, oldLoc.z, oldLoc.interiorId);
+
 				WlInputDialog.create(player, eventManager)
-					.caption("编辑传送点坐标")
+					.caption(stringSet.get("Dialog.TeleportDialog.EditPositionDialog.Caption"))
 					.message(msg)
 					.onClickOk((d, text) ->
 					{
 						player.playSound(1083);
-						
+
 						try (Scanner scanner = new Scanner(text))
 						{
 							AngledLocation location = new AngledLocation(teleport.getLocation());
@@ -103,17 +107,17 @@ public class TeleportDialog
 						}
 						catch (NoSuchElementException e)
 						{
-							((WlInputDialog) d).setAppendMessage("{FF0000}* 请按照正确的格式输入坐标值。");
+							((WlInputDialog) d).setAppendMessage(stringSet.get("Dialog.Common.InvaildFormat"));
 							d.show();
 						}
 					})
 					.build().show();
 			})
-			
+
 			.item(() ->
 			{
 				AngledLocation loc = teleport.getLocation();
-				return String.format("角度: %1$1.1f", loc.getAngle());
+				return String.format(stringSet.format("Dialog.TeleportDialog.Angle", loc.getAngle()));
 			}, (i) ->
 			{
 				if (!player.getName().equalsIgnoreCase(teleport.getCreater()))
@@ -121,16 +125,16 @@ public class TeleportDialog
 					i.getCurrentDialog().show();
 					return;
 				}
-				
-				String msg = String.format("当前角度值为: %1$1.1f\n请输入新角度值:", teleport.getLocation().getAngle());
+
+				String msg = stringSet.format("Dialog.TeleportDialog.EditAngleDialog.Message", teleport.getLocation().getAngle());
 				WlInputDialog.create(player, eventManager)
 					.parentDialog(i.getCurrentDialog())
-					.caption("编辑传送点角度")
+					.caption(stringSet.get("Dialog.TeleportDialog.EditAngleDialog.Caption"))
 					.message(msg)
 					.onClickOk((d, text) ->
 					{
 						player.playSound(1083);
-						
+
 						try (Scanner scanner = new Scanner(text))
 						{
 							AngledLocation location = new AngledLocation(teleport.getLocation());
@@ -140,23 +144,23 @@ public class TeleportDialog
 						}
 						catch (NoSuchElementException e)
 						{
-							((WlInputDialog) d).setAppendMessage("{FF0000}* 请按照正确的格式输入角度值。");
+							((WlInputDialog) d).setAppendMessage(stringSet.get("Dialog.Common.InvaildFormat"));
 							d.show();
 						}
 					})
 					.build().show();
 			})
-			
-			.item(() -> String.format("更新日期: %1$s", DateFormatUtils.ISO_DATETIME_FORMAT.format(teleport.getUpdateDate())), (i) -> i.getCurrentDialog().show())
-			
-			.item(() -> String.format("人气: %1$d", teleport.getTeleportCounter()), (i) -> i.getCurrentDialog().show())
-			
-			.item("更新坐标到当前位置", () -> player.getName().equalsIgnoreCase(teleport.getCreater()), (i) ->
+
+			.item(() -> stringSet.format("Dialog.TeleportDialog.UpdateDate", DateFormatUtils.ISO_DATETIME_FORMAT.format(teleport.getUpdateDate())), (i) -> i.getCurrentDialog().show())
+
+			.item(() -> stringSet.format("Dialog.TeleportDialog.Popularity", teleport.getTeleportCounter()), (i) -> i.getCurrentDialog().show())
+
+			.item(stringSet.get("Dialog.TeleportDialog.SetPos"), () -> player.getName().equalsIgnoreCase(teleport.getCreater()), (i) ->
 			{
-				String message = String.format("您确认要将传送点 {0000AF}%1$s{A9C4E4} 的位置更新到当前位置吗？", teleport.getName());
+				String message = stringSet.format("Dialog.TeleportDialog.SetPosConfirmDialog.Message", teleport.getName());
 				WlMsgboxDialog.create(player, eventManager)
 					.parentDialog(i.getCurrentDialog())
-					.caption("更新传送点坐标")
+					.caption(stringSet.get("Dialog.TeleportDialog.SetPosConfirmDialog.Caption"))
 					.message(message)
 					.onClickOk((d) ->
 					{
@@ -166,13 +170,13 @@ public class TeleportDialog
 					})
 					.build().show();
 			})
-			
-			.item("删除传送点", () -> player.getName().equalsIgnoreCase(teleport.getCreater()), (i) ->
+
+			.item(stringSet.get("Dialog.TeleportDialog.Delete"), () -> player.getName().equalsIgnoreCase(teleport.getCreater()), (i) ->
 			{
-				String message = String.format("您确认要删除传送点 {0000AF}%1$s{A9C4E4} 吗？\n警告，此删除操作无法恢复！！", teleport.getName());
+				String message = stringSet.format("Dialog.TeleportDialog.DeleteConfirmDialog.Message", teleport.getName());
 				MsgboxDialog.create(player, eventManager)
 					.parentDialog(i.getCurrentDialog())
-					.caption("更新传送点坐标")
+					.caption(stringSet.get("Dialog.TeleportDialog.DeleteConfirmDialog.Caption"))
 					.message(message)
 					.onClickOk((d)->
 					{
@@ -181,8 +185,8 @@ public class TeleportDialog
 						d.showParentDialog();
 					}).build().show();
 			})
-			
-			.item("传送", (i) ->
+
+			.item(stringSet.get("Dialog.TeleportDialog.Teleport"), (i) ->
 			{
 				player.playSound(1083);
 				teleport.teleport(player);
@@ -190,11 +194,11 @@ public class TeleportDialog
 			})
 			// FIXME
 			// parentDialog instanceof TeleportMainDialog == false
-			
-			.item("完成")
+
+			.item(stringSet.get("Dialog.TeleportDialog.Finish"))
 			// FIXME
 			// parentDialog instanceof TeleportMainDialog
-			
+
 			.build();
 	}
 }

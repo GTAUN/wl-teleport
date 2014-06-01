@@ -29,6 +29,7 @@ import net.gtaun.shoebill.data.Color;
 import net.gtaun.shoebill.data.Location;
 import net.gtaun.shoebill.object.Player;
 import net.gtaun.util.event.EventManager;
+import net.gtaun.wl.lang.LocalizedStringSet.PlayerStringSet;
 import net.gtaun.wl.teleport.Teleport;
 import net.gtaun.wl.teleport.impl.TeleportServiceImpl;
 
@@ -36,7 +37,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 public class TeleportListDialog extends PageListDialog
 {
-	private final TeleportServiceImpl teleportService;
+	private final TeleportServiceImpl service;
 	private final List<Teleport> teleports;
 
 	private int operation;
@@ -45,12 +46,12 @@ public class TeleportListDialog extends PageListDialog
 
 
 	public TeleportListDialog
-	(Player player, EventManager eventManager, AbstractDialog parentDialog, TeleportServiceImpl teleportService, List<Teleport> teleports)
+	(Player player, EventManager eventManager, AbstractDialog parentDialog, TeleportServiceImpl service, List<Teleport> teleports)
 	{
 		super(player, eventManager);
 		setParentDialog(parentDialog);
 
-		this.teleportService = teleportService;
+		this.service = service;
 		this.teleports = teleports;
 
 		sortComparators = new ArrayList<Comparator<Teleport>>();
@@ -64,16 +65,21 @@ public class TeleportListDialog extends PageListDialog
 
 		sortComparator = sortComparators.get(0);
 		update();
+
+		PlayerStringSet stringSet = service.getLocalizedStringSet().getStringSet(player);
+		setCaption(stringSet.get("Dialog.TeleportListDialog.Caption"));
 	}
 
 	private void update()
 	{
+		PlayerStringSet stringSet = service.getLocalizedStringSet().getStringSet(player);
+
 		items.clear();
 		addItem(ListDialogItemRadio.create()
-			.itemText("操作:")
+			.itemText(stringSet.get("Dialog.TeleportListDialog.Operation"))
 			.selectedIndex(() -> operation)
-			.item("传送", Color.LIGHTBLUE)
-			.item("查看选项", Color.LIGHTPINK)
+			.item(stringSet.get("Dialog.TeleportListDialog.OpTeleport"), Color.LIGHTBLUE)
+			.item(stringSet.get("Dialog.TeleportListDialog.OpShowInfo"), Color.LIGHTPINK)
 			.onRadioItemSelect((dialogItem, item, index) ->
 			{
 				player.playSound(1083);
@@ -83,11 +89,11 @@ public class TeleportListDialog extends PageListDialog
 			.build());
 
 		addItem(ListDialogItemRadio.create()
-			.itemText("排序方式:")
+			.itemText(stringSet.get("Dialog.TeleportListDialog.SortMode"))
 			.selectedIndex(() -> sortComparators.indexOf(sortComparator))
-			.item("距离最近", Color.RED)
-			.item("人气最高", Color.GREEN)
-			.item("最近更新", Color.YELLOW)
+			.item(stringSet.get("Dialog.TeleportListDialog.SortByDistance"), Color.RED)
+			.item(stringSet.get("Dialog.TeleportListDialog.SortByPopular"), Color.GREEN)
+			.item(stringSet.get("Dialog.TeleportListDialog.SortByDate"), Color.YELLOW)
 			.onRadioItemSelect((dialogItem, item, index) ->
 			{
 				player.playSound(1083);
@@ -103,12 +109,7 @@ public class TeleportListDialog extends PageListDialog
 			int counter = teleport.getTeleportCounter();
 			String date = DateFormatUtils.ISO_DATE_FORMAT.format(teleport.getUpdateDate());
 
-			String item = String.format
-			(
-				"%1$s	{808080}创建者: %2$s, 人气: %3$d, 更新日期: %4$s",
-				name, creater, counter, date
-			);
-
+			String item = stringSet.format("Dialog.TeleportListDialog.Item", name, creater, counter, date);
 			addItem(item, (i) ->
 			{
 				player.playSound(1083);
@@ -119,7 +120,7 @@ public class TeleportListDialog extends PageListDialog
 					break;
 
 				case 1:
-					TeleportDialog.create(player, eventManagerNode.getParent(), TeleportListDialog.this, teleportService, teleport).show();
+					TeleportDialog.create(player, eventManagerNode.getParent(), TeleportListDialog.this, service, teleport).show();
 					break;
 
 				default:
