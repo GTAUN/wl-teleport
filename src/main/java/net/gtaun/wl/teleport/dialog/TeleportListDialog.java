@@ -38,21 +38,21 @@ public class TeleportListDialog extends PageListDialog
 {
 	private final TeleportServiceImpl teleportService;
 	private final List<Teleport> teleports;
-	
+
 	private int operation;
 	private List<Comparator<Teleport>> sortComparators;
 	private Comparator<Teleport> sortComparator;
-	
-	
+
+
 	public TeleportListDialog
 	(Player player, EventManager eventManager, AbstractDialog parentDialog, TeleportServiceImpl teleportService, List<Teleport> teleports)
 	{
 		super(player, eventManager);
 		setParentDialog(parentDialog);
-		
+
 		this.teleportService = teleportService;
 		this.teleports = teleports;
-		
+
 		sortComparators = new ArrayList<Comparator<Teleport>>();
 		sortComparators.add((o1, o2) ->
 		{
@@ -61,11 +61,11 @@ public class TeleportListDialog extends PageListDialog
 		});
 		sortComparators.add((o1, o2) -> o2.getTeleportCounter() - o1.getTeleportCounter());
 		sortComparators.add((o1, o2) -> (int) (o2.getUpdateDate().getTime()/1000 - o1.getUpdateDate().getTime()/1000));
-		
+
 		sortComparator = sortComparators.get(0);
 		update();
 	}
-	
+
 	private void update()
 	{
 		items.clear();
@@ -74,41 +74,41 @@ public class TeleportListDialog extends PageListDialog
 			.selectedIndex(() -> operation)
 			.item("传送", Color.LIGHTBLUE)
 			.item("查看选项", Color.LIGHTPINK)
-			.onRadioItemSelect((item, index) ->
+			.onRadioItemSelect((dialogItem, item, index) ->
 			{
 				player.playSound(1083);
 				operation = index;
 				show();
 			})
 			.build());
-		
+
 		addItem(ListDialogItemRadio.create()
 			.itemText("排序方式:")
 			.selectedIndex(() -> sortComparators.indexOf(sortComparator))
 			.item("距离最近", Color.RED)
 			.item("人气最高", Color.GREEN)
 			.item("最近更新", Color.YELLOW)
-			.onRadioItemSelect((item, index) ->
+			.onRadioItemSelect((dialogItem, item, index) ->
 			{
 				player.playSound(1083);
 				sortComparator = sortComparators.get(index);
 				show();
 			})
 			.build());
-		
+
 		for (Teleport teleport : teleports)
 		{
 			String name = teleport.getName();
 			String creater = teleport.getCreater();
 			int counter = teleport.getTeleportCounter();
 			String date = DateFormatUtils.ISO_DATE_FORMAT.format(teleport.getUpdateDate());
-			
+
 			String item = String.format
 			(
 				"%1$s	{808080}创建者: %2$s, 人气: %3$d, 更新日期: %4$s",
 				name, creater, counter, date
 			);
-			
+
 			addItem(item, (i) ->
 			{
 				player.playSound(1083);
@@ -117,11 +117,11 @@ public class TeleportListDialog extends PageListDialog
 				case 0:
 					teleport.teleport(player);
 					break;
-					
+
 				case 1:
 					TeleportDialog.create(player, eventManagerNode.getParent(), TeleportListDialog.this, teleportService, teleport).show();
 					break;
-					
+
 				default:
 					show();
 					break;
